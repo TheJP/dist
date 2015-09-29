@@ -7,7 +7,7 @@ public class Main {
 	public static void main(String[] args) {
 		ReadData rd = new ReadData();
 		try {
-			rd.readZip("resources/ham-anlernen.zip");
+			rd.readZip("resources/ham-anlern.zip");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
