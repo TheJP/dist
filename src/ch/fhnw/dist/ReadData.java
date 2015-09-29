@@ -12,11 +12,12 @@ public class ReadData {
 	public HashMap<String, Integer> readZip(String fileName) throws IOException {
 		final HashMap<String, Integer> hm = new HashMap<>();
 		ZipFile zf = new ZipFile(fileName);
-		Enumeration<ZipEntry> enumeration = (Enumeration<ZipEntry>) zf.entries();
+		Enumeration<?> enumeration = zf.entries();
 		while(enumeration.hasMoreElements()) {
-			ZipEntry ze = enumeration.nextElement();
+			ZipEntry ze = (ZipEntry) enumeration.nextElement();
 			findWords(hm, zf.getInputStream(ze));
 		}
+		zf.close();
 		return hm;
 	}
 	

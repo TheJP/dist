@@ -5,12 +5,9 @@ import java.io.IOException;
 public class Main {
 
 	public static void main(String[] args) {
-		if(args.length != 1) {
-			return;
-		}
 		ReadData rd = new ReadData();
 		try {
-			rd.readZip(args[0]);
+			rd.readZip("resources/ham-anlernen.zip");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
