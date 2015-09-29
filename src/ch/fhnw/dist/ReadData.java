@@ -9,14 +9,13 @@ import java.util.zip.ZipFile;
 
 public class ReadData {
 	
-	
 	public HashMap<String, Integer> readZip(String fileName) throws IOException {
 		final HashMap<String, Integer> hm = new HashMap<>();
 		ZipFile zf = new ZipFile(fileName);
 		Enumeration<ZipEntry> enumeration = (Enumeration<ZipEntry>) zf.entries();
 		while(enumeration.hasMoreElements()) {
 			ZipEntry ze = enumeration.nextElement();
-			zf.getInputStream(ze);
+			findWords(hm, zf.getInputStream(ze));
 		}
 		return hm;
 	}
