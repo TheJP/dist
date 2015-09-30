@@ -34,7 +34,7 @@ public class ReadData {
 		return hm;
 	}
 	
-	public void findWords(HashMap<String, Integer> hm, InputStream stream) throws RuntimeException {
+	public void findWords(HashMap<String, Integer> hm, InputStream stream) {
 		MailParser parser = new MailParser();
 		
 		String content = null;
