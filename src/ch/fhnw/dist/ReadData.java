@@ -18,19 +18,31 @@ public class ReadData {
 	public HashMap<String, Integer> readZip(String fileName) throws IOException, MessagingException {
 		final HashMap<String, Integer> hm = new HashMap<>();
 		try(ZipFile zf = new ZipFile(fileName)){
-			Enumeration<?> enumeration = zf.entries();
-			while(enumeration.hasMoreElements()) {
-				ZipEntry ze = (ZipEntry) enumeration.nextElement();
-				findWords(hm, zf.getInputStream(ze));
-			}
+			zf.stream().forEach(z -> {
+				try {
+					findWords(hm, zf.getInputStream(z));
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+			});
+//			Enumeration<?> enumeration = zf.entries();
+//			while(enumeration.hasMoreElements()) {
+//				ZipEntry ze = (ZipEntry) enumeration.nextElement();
+//				findWords(hm, zf.getInputStream(ze));
+//			}
 		}
 		return hm;
 	}
 	
-	public void findWords(HashMap<String, Integer> hm, InputStream stream) throws MessagingException, IOException {
+	public void findWords(HashMap<String, Integer> hm, InputStream stream) throws RuntimeException {
 		MailParser parser = new MailParser();
-
-		String content = parser.getMessage(stream);
+		
+		String content = null;
+		try {
+			content = parser.getMessage(stream);
+		} catch (IOException | MessagingException e) {
+			throw new RuntimeException(e);
+		}
 		Map<String, Integer> map = Stream.of(content).map(w -> w.split("\\W+")).flatMap(Arrays::stream).collect(groupingBy(Function.identity(), summingInt(e -> 1)));
 
         Map<String, Integer> nHm = Stream.of(hm, map).parallel().map(Map::entrySet).flatMap(Collection::stream).collect(Collectors.toConcurrentMap(Map.Entry::getKey, Map.Entry::getValue, Integer::sum));
