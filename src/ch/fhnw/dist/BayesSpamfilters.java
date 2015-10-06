@@ -7,10 +7,13 @@ import java.util.PriorityQueue;
 
 public class BayesSpamfilters {
 	final int SCANCOUNT = 10;
-	HashMap<String, Double> hamMap;
-	HashMap<String, Double> spamMap;
+	HashMap<String, Integer> hamMap;
+	HashMap<String, Integer> spamMap;
 	
-	public BayesSpamfilters(HashMap<String, Double> hamMap, HashMap<String, Double> spamMap) {
+	public BayesSpamfilters(HashMap<String, Integer> hamMap, HashMap<String, Integer> spamMap) {
+		if(hamMap.size() != spamMap.size()) {
+			throw new IllegalArgumentException("ham and spam map have not the same size!");
+		}
 		this.hamMap = hamMap; 
 		this.spamMap = spamMap;
 	}
