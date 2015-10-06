@@ -8,22 +8,22 @@ import javax.mail.MessagingException;
 public class Main {
 
 	public static void main(String[] args) {
-		 
-		ReadData rd = new ReadData();
+		BayesSpamfilter filter = new BayesSpamfilter();
+		
+		ReadData rd = new ReadData(filter);
 		try {
-			HashMap<String, Integer> spamMap = rd.readZip("resources/spam-anlern.zip");
-			HashMap<String, Integer> hamMap = rd.readZip("resources/ham-anlern.zip");
-			//1. Ausgleich Listen (beni)
-			rd.equalsMap(spamMap, hamMap);
+			rd.readZip("resources/spam-anlern.zip", true);
+			rd.readZip("resources/ham-anlern.zip", false);
+
 			//2. Wahrscheinlichkeit bestimmen durch anlernen
 			double hamSpam = 1/2;
 			//3. Testen mit ham und spam test
-			HashMap<String, Integer> hamTestMap = rd.readZip("resources/ham-test.zip");
-			HashMap<String, Integer> spamTestMap = rd.readZip("resources/spam-test.zip");
+//			rd.readZip("resources/ham-test.zip");
+//			rd.readZip("resources/spam-test.zip");
 			
-			for (String s : spamMap.keySet()) {
-                System.out.println(s + ": " + spamMap.get(s));
-            }
+//			for (String s : spamMap.keySet()) {
+//                System.out.println(s + ": " + spamMap.get(s));
+//            }
 		} catch (IOException | MessagingException e) {
 			e.printStackTrace();
 		}

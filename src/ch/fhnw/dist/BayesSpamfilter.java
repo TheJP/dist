@@ -1,30 +1,43 @@
 package ch.fhnw.dist;
 
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.summingInt;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.PriorityQueue;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import javax.mail.MessagingException;
 
 public class BayesSpamfilter {
 	final int SCANCOUNT = 10;
-	HashMap<String, Integer> hamMap;
+	HashMap<String, Integer> hamMap = new HashMap<>();
 	int hamMailCount = 0;
     int hamWordCount;
-	HashMap<String, Integer> spamMap;
+	HashMap<String, Integer> spamMap = new HashMap<>();
 	int spamMailCount = 0;
     int spamWordCount;
+    boolean scanned = false;
 	
-	public BayesSpamfilter(HashMap<String, Integer> hamMap, HashMap<String, Integer> spamMap) {
-		if(hamMap.size() != spamMap.size()) {
-			throw new IllegalArgumentException("ham and spam map have not the same size!");
-		}
-		this.hamMap = hamMap; 
-		this.spamMap = spamMap;
-        hamWordCount = hamMap.values().stream().mapToInt(Number::intValue).sum();
-        spamWordCount = spamMap.values().stream().mapToInt(Number::intValue).sum();
+	public BayesSpamfilter() {
+//        hamWordCount = hamMap.values().stream().mapToInt(Number::intValue).sum();
+//        spamWordCount = spamMap.values().stream().mapToInt(Number::intValue).sum();
 	}
 	
 	public boolean isSpam(HashMap<String, Integer> mail) {
+		if(!scanned) {
+			equalsMap();
+			scanned = true;
+		}
 		PriorityQueue<QueueObj> queue = new PriorityQueue<>(mail.size(), Collections.reverseOrder());
 		mail.entrySet().forEach(s -> queue.add(new QueueObj(s.getValue(), s.getKey())));
 		
@@ -37,6 +50,36 @@ public class BayesSpamfilter {
 		
 		return false;
 	}
+	
+	public void addMail(InputStream stream, boolean isSpam) {
+		scanned = false;
+		MailParser parser = new MailParser();
+		
+		String content = null;
+		try {
+			content = parser.getMessage(stream);
+		} catch (IOException | MessagingException e) {
+			throw new RuntimeException(e);
+		}
+		Map<String, Integer> map = Stream.of(content).map(w -> w.split("\\W+")).flatMap(Arrays::stream).collect(groupingBy(Function.identity(), summingInt(e -> 1)));
+
+        if(isSpam) {
+        	Map<String, Integer> nHm = Stream.of(spamMap, map).parallel().map(Map::entrySet).flatMap(Collection::stream).collect(Collectors.toConcurrentMap(Map.Entry::getKey, Map.Entry::getValue, Integer::sum));
+        	spamMap.putAll(nHm);
+        } else {
+        	Map<String, Integer> nHm = Stream.of(hamMap, map).parallel().map(Map::entrySet).flatMap(Collection::stream).collect(Collectors.toConcurrentMap(Map.Entry::getKey, Map.Entry::getValue, Integer::sum));
+        	hamMap.putAll(nHm);
+        }
+	}
+
+	public void equalsMap() {
+		hamMap.keySet().stream().filter(s -> !spamMap.containsKey(s)).forEach(s -> {
+            spamMap.put(s, 1);
+        });
+        spamMap.keySet().stream().filter(s -> !hamMap.containsKey(s)).forEach(s -> {
+        	hamMap.put(s, 1);
+        });
+    }
 	
 	class QueueObj implements Comparator<QueueObj>{
 		public int key;
