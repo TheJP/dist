@@ -1,14 +1,15 @@
 package ch.fhnw.dist;
 
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.PriorityQueue;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.stream.Stream;
 
 public class BayesSpamfilters {
 	final int SCANCOUNT = 10;
 	HashMap<String, Integer> hamMap;
+    final int hamCount;
 	HashMap<String, Integer> spamMap;
+    final int spamCount;
 	
 	public BayesSpamfilters(HashMap<String, Integer> hamMap, HashMap<String, Integer> spamMap) {
 		if(hamMap.size() != spamMap.size()) {
@@ -16,6 +17,8 @@ public class BayesSpamfilters {
 		}
 		this.hamMap = hamMap; 
 		this.spamMap = spamMap;
+        hamCount = hamMap.values().stream().mapToInt(Number::intValue).sum();
+        spamCount = spamMap.values().stream().mapToInt(Number::intValue).sum();
 	}
 	
 	public boolean isSpam(HashMap<String, Integer> mail) {
