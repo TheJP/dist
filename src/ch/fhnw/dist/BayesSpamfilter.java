@@ -27,6 +27,9 @@ public class BayesSpamfilter {
 	int spamMailCount = 0;
     int spamWordCount;
     boolean scanned = false;
+    
+	double hamProbability = 0.5;
+	double spamProbability = 0.5;
 	
 	public BayesSpamfilter() {
 //        hamWordCount = hamMap.values().stream().mapToInt(Number::intValue).sum();
@@ -36,19 +39,23 @@ public class BayesSpamfilter {
 	public boolean isSpam(HashMap<String, Integer> mail) {
 		if(!scanned) {
 			equalsMap();
+			calcProbability();
 			scanned = true;
 		}
 		PriorityQueue<QueueObj> queue = new PriorityQueue<>(mail.size(), Collections.reverseOrder());
 		mail.entrySet().forEach(s -> queue.add(new QueueObj(s.getValue(), s.getKey())));
 		
+		double prodPH = 1;
+		double pordPS = 1;
 		for(int i = 0; i < SCANCOUNT; i++) {
 			QueueObj scanObj = queue.poll();
 			if(scanObj != null) {
-				
+				prodPH *= hamMailCount / hamMap.get(scanObj.val);
+				pordPS *= spamMailCount / spamMap.get(scanObj.val);
 			}
 		}
-		
-		return false;
+		double robability = (spamProbability * pordPS)/(spamProbability * pordPS + hamProbability * prodPH);
+		return robability > 0.5;
 	}
 	
 	public void addMail(InputStream stream, boolean isSpam) {
@@ -66,13 +73,15 @@ public class BayesSpamfilter {
         if(isSpam) {
         	Map<String, Integer> nHm = Stream.of(spamMap, map).parallel().map(Map::entrySet).flatMap(Collection::stream).collect(Collectors.toConcurrentMap(Map.Entry::getKey, Map.Entry::getValue, Integer::sum));
         	spamMap.putAll(nHm);
+        	spamMailCount++;
         } else {
         	Map<String, Integer> nHm = Stream.of(hamMap, map).parallel().map(Map::entrySet).flatMap(Collection::stream).collect(Collectors.toConcurrentMap(Map.Entry::getKey, Map.Entry::getValue, Integer::sum));
         	hamMap.putAll(nHm);
+        	hamMailCount++;
         }
 	}
 
-	public void equalsMap() {
+	private void equalsMap() {
 		hamMap.keySet().stream().filter(s -> !spamMap.containsKey(s)).forEach(s -> {
             spamMap.put(s, 1);
         });
@@ -80,6 +89,13 @@ public class BayesSpamfilter {
         	hamMap.put(s, 1);
         });
     }
+	
+	private void calcProbability() {
+		//TODO Wahrscheinlichkeit bestimmen durch anlernen
+		hamProbability = 0.5;
+		spamProbability = 0.5;
+	}
+	
 	
 	class QueueObj implements Comparator<QueueObj>{
 		public int key;
