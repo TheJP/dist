@@ -27,6 +27,7 @@ public class BayesSpamfilter {
 	int spamMailCount = 0;
     int spamWordCount;
     boolean scanned = false;
+    double spamProbability = 0.5;
 	
 	public BayesSpamfilter() {
 //        hamWordCount = hamMap.values().stream().mapToInt(Number::intValue).sum();
@@ -96,9 +97,18 @@ public class BayesSpamfilter {
         });
     }
 	
+	public boolean isSpam(InputStream stream) {
+		return probabilitySpam(stream) > spamProbability;
+	}
+	
 	public void calcProbability(InputStream stream, boolean isSpam) {
-		//TODO Wahrscheinlichkeit bestimmen durch anlernen
-		
+		if(isSpam(stream)) {
+			if(!isSpam) {
+				spamProbability -= 1 / (spamMailCount + hamMailCount);
+			}
+		} else if (isSpam) {
+			spamProbability += 1 / (spamMailCount + hamMailCount);
+		}
 	}
 	
 	

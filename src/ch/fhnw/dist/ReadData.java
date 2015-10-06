@@ -48,7 +48,7 @@ public class ReadData {
 		try(ZipFile zf = new ZipFile(fileName)){
 			zf.stream().forEach(z -> {
 				try {
-					System.out.println(spamFilter.probabilitySpam(zf.getInputStream(z)));	
+					System.out.println(spamFilter.isSpam(zf.getInputStream(z)));	
 				} catch (IOException e) {
 					throw new RuntimeException(e);
 				}
