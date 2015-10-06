@@ -8,6 +8,7 @@ import javax.mail.MessagingException;
 public class Main {
 
 	public static void main(String[] args) {
+		 
 		ReadData rd = new ReadData();
 		try {
 			HashMap<String, Integer> spamMap = rd.readZip("resources/spam-anlern.zip");

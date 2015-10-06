@@ -1,24 +1,27 @@
 package ch.fhnw.dist;
 
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.stream.Stream;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.PriorityQueue;
 
-public class BayesSpamfilters {
+public class BayesSpamfilter {
 	final int SCANCOUNT = 10;
 	HashMap<String, Integer> hamMap;
-    final int hamCount;
+	int hamMailCount = 0;
+    int hamWordCount;
 	HashMap<String, Integer> spamMap;
-    final int spamCount;
+	int spamMailCount = 0;
+    int spamWordCount;
 	
-	public BayesSpamfilters(HashMap<String, Integer> hamMap, HashMap<String, Integer> spamMap) {
+	public BayesSpamfilter(HashMap<String, Integer> hamMap, HashMap<String, Integer> spamMap) {
 		if(hamMap.size() != spamMap.size()) {
 			throw new IllegalArgumentException("ham and spam map have not the same size!");
 		}
 		this.hamMap = hamMap; 
 		this.spamMap = spamMap;
-        hamCount = hamMap.values().stream().mapToInt(Number::intValue).sum();
-        spamCount = spamMap.values().stream().mapToInt(Number::intValue).sum();
+        hamWordCount = hamMap.values().stream().mapToInt(Number::intValue).sum();
+        spamWordCount = spamMap.values().stream().mapToInt(Number::intValue).sum();
 	}
 	
 	public boolean isSpam(HashMap<String, Integer> mail) {
