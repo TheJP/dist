@@ -49,4 +49,14 @@ public class ReadData {
 
         hm.putAll(nHm);
 	}
+
+	public void equalsMap(Map<String, Integer> m1, Map<String, Integer> m2) {
+
+        m1.keySet().stream().filter(s -> !m2.containsKey(s)).forEach(s -> {
+            m2.put(s, 1);
+        });
+        m2.keySet().stream().filter(s -> !m1.containsKey(s)).forEach(s -> {
+            m1.put(s, 1);
+        });
+    }
 }

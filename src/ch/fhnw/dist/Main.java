@@ -13,7 +13,7 @@ public class Main {
 			HashMap<String, Integer> spamMap = rd.readZip("resources/spam-anlern.zip");
 			HashMap<String, Integer> hamMap = rd.readZip("resources/ham-anlern.zip");
 			//1. Ausgleich Listen (beni)
-			
+			rd.equalsMap(spamMap, hamMap);
 			//2. Wahrscheinlichkeit bestimmen durch anlernen
 			double hamSpam = 1/2;
 			//3. Testen mit ham und spam test
