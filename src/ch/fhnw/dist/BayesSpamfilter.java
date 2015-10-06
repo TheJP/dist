@@ -20,10 +20,10 @@ import javax.mail.MessagingException;
 
 public class BayesSpamfilter {
 	final int SCANCOUNT = 10;
-	HashMap<String, Integer> hamMap = new HashMap<>();
+	final HashMap<String, Integer> hamMap = new HashMap<>();
 	int hamMailCount = 0;
     int hamWordCount;
-	HashMap<String, Integer> spamMap = new HashMap<>();
+	final HashMap<String, Integer> spamMap = new HashMap<>();
 	int spamMailCount = 0;
     int spamWordCount;
     boolean scanned = false;
@@ -57,8 +57,12 @@ public class BayesSpamfilter {
 		for(int i = 0; i < SCANCOUNT; i++) {
 			QueueObj scanObj = queue.poll();
 			if(scanObj != null) {
-				prodPH *= hamMailCount / hamMap.get(scanObj.val);
-				pordPS *= spamMailCount / spamMap.get(scanObj.val);
+				try {
+					prodPH *= hamMailCount / hamMap.get(scanObj.val);
+					pordPS *= spamMailCount / spamMap.get(scanObj.val);
+				} catch (NullPointerException e) {
+					e.printStackTrace();
+				}
 			}
 		}
 		double probability = pordPS/(pordPS + prodPH);
