@@ -36,14 +36,23 @@ public class BayesSpamfilter {
 //        spamWordCount = spamMap.values().stream().mapToInt(Number::intValue).sum();
 	}
 	
-	public boolean isSpam(HashMap<String, Integer> mail) {
+	public boolean isSpam(InputStream mailStream) {
+		MailParser parser = new MailParser();
+		
+		String content = null;
+		try {
+			content = parser.getMessage(mailStream);
+		} catch (IOException | MessagingException e) {
+			throw new RuntimeException(e);
+		}
+		Map<String, Integer> map = Stream.of(content).map(w -> w.split("\\W+")).flatMap(Arrays::stream).collect(groupingBy(Function.identity(), summingInt(e -> 1)));
+
 		if(!scanned) {
 			equalsMap();
-			calcProbability();
 			scanned = true;
 		}
-		PriorityQueue<QueueObj> queue = new PriorityQueue<>(mail.size(), Collections.reverseOrder());
-		mail.entrySet().forEach(s -> queue.add(new QueueObj(s.getValue(), s.getKey())));
+		PriorityQueue<QueueObj> queue = new PriorityQueue<>(map.size(), Collections.reverseOrder());
+		map.entrySet().forEach(s -> queue.add(new QueueObj(s.getValue(), s.getKey())));
 		
 		double prodPH = 1;
 		double pordPS = 1;
@@ -90,7 +99,7 @@ public class BayesSpamfilter {
         });
     }
 	
-	private void calcProbability() {
+	public void calcProbability(InputStream stream, boolean isSpam) {
 		//TODO Wahrscheinlichkeit bestimmen durch anlernen
 		hamProbability = 0.5;
 		spamProbability = 0.5;

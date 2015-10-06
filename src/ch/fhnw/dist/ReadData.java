@@ -13,8 +13,8 @@ public class ReadData {
 		this.spamFilter = spamFilter;
 	}
 	
-	public void readZip(String fileName, boolean isSpam) throws IOException, MessagingException {
-		final HashMap<String, Integer> hm = new HashMap<>();
+	public void zipToSpamfilter(String fileName, boolean isSpam) 
+			throws IOException, MessagingException {
 		try(ZipFile zf = new ZipFile(fileName)){
 			zf.stream().forEach(z -> {
 				try {
@@ -31,5 +31,30 @@ public class ReadData {
 		}
 	}
 	
+	public void zipLern(String fileName, boolean isSpam) 
+			throws IOException, MessagingException {
+		try(ZipFile zf = new ZipFile(fileName)){
+			zf.stream().forEach(z -> {
+				try {
+					spamFilter.calcProbability(zf.getInputStream(z), isSpam);	
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+			});
+		}
+	}
+	
+	public void zipTest(String fileName) 
+			throws IOException, MessagingException {
+		try(ZipFile zf = new ZipFile(fileName)){
+			zf.stream().forEach(z -> {
+				try {
+					System.out.println(spamFilter.isSpam(zf.getInputStream(z)));	
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+			});
+		}
+	}
 	
 }
