@@ -112,7 +112,7 @@ public class BayesSpamfilter {
 	}
 	
 	
-	class QueueObj implements Comparator<QueueObj>{
+	class QueueObj implements Comparable<QueueObj>{
 		public int key;
 		public String val;
 		
@@ -120,10 +120,10 @@ public class BayesSpamfilter {
 			this.key = key;
 			this.val = val;
 		}
-		
+
 		@Override
-		public int compare(QueueObj o1, QueueObj o2) {
-			return o1.key < o2.key ? -1 : o1.key == o2.key ? 0 : 1;
+		public int compareTo(QueueObj o) {
+			return key < o.key ? -1 : key == o.key ? 0 : 1;
 		}
 	}
 }
