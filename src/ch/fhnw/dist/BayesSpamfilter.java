@@ -60,7 +60,7 @@ public class BayesSpamfilter {
 					prodPH *= hamMailCount / hamMap.get(scanObj.val);
 					pordPS *= spamMailCount / spamMap.get(scanObj.val);
 				} catch (NullPointerException e) {
-					e.printStackTrace();
+					e.printStackTrace(); //wtf?
 				}
 			}
 		}
