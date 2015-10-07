@@ -6,18 +6,21 @@ import static java.util.stream.Collectors.summingInt;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.PriorityQueue;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import javax.mail.MessagingException;
 
 public class BayesSpamfilter {
+	MailParser parser = new MailParser();
 	final int SCANCOUNT = 10;
 	final HashMap<String, Integer> hamMap = new HashMap<>();
 	int hamMailCount = 0;
@@ -25,7 +28,6 @@ public class BayesSpamfilter {
 	final HashMap<String, Integer> spamMap = new HashMap<>();
 	int spamMailCount = 0;
     int spamWordCount;
-    boolean scanned = false;
     double spamProbability = 0.5;
 	
 	public BayesSpamfilter() {
@@ -42,12 +44,8 @@ public class BayesSpamfilter {
 		} catch (IOException | MessagingException e) {
 			throw new RuntimeException(e);
 		}
-		Map<String, Integer> map = Stream.of(content).map(w -> w.split("\\W+")).flatMap(Arrays::stream).collect(groupingBy(Function.identity(), summingInt(e -> 1)));
+		Map<String, Integer> map = Arrays.stream(content.split("\\W+")).collect(groupingBy(Function.identity(), summingInt(e -> 1)));
 
-		if(!scanned) {
-			equalsMap();
-			scanned = true;
-		}
 		PriorityQueue<QueueObj> queue = new PriorityQueue<>(map.size(), Collections.reverseOrder());
 		map.entrySet().forEach(s -> queue.add(new QueueObj(s.getValue(), s.getKey())));
 		
@@ -68,37 +66,39 @@ public class BayesSpamfilter {
 		return probability;
 	}
 	
+	public void addMail(ZipFile zf, ZipEntry z, boolean isSpam) {
+		try {
+			addMail(zf.getInputStream(z), isSpam);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 	public void addMail(InputStream stream, boolean isSpam) {
-		scanned = false;
-		MailParser parser = new MailParser();
-		
 		String content = null;
 		try {
 			content = parser.getMessage(stream);
 		} catch (IOException | MessagingException e) {
 			throw new RuntimeException(e);
 		}
-		Map<String, Integer> map = Stream.of(content).map(w -> w.split("\\W+")).flatMap(Arrays::stream).collect(groupingBy(Function.identity(), summingInt(e -> 1)));
 
-        if(isSpam) {
-        	Map<String, Integer> nHm = Stream.of(spamMap, map).parallel().map(Map::entrySet).flatMap(Collection::stream).collect(Collectors.toConcurrentMap(Map.Entry::getKey, Map.Entry::getValue, Integer::sum));
-        	spamMap.putAll(nHm);
-        	spamMailCount++;
-        } else {
-        	Map<String, Integer> nHm = Stream.of(hamMap, map).parallel().map(Map::entrySet).flatMap(Collection::stream).collect(Collectors.toConcurrentMap(Map.Entry::getKey, Map.Entry::getValue, Integer::sum));
-        	hamMap.putAll(nHm);
-        	hamMailCount++;
-        }
+		Set<String> words = Arrays.stream(content.toLowerCase(Locale.ENGLISH).split("\\W+"))
+			.distinct().filter(w -> !w.trim().equals(""))
+			.collect(Collectors.toSet());
+
+		for(String word : words){
+			if(isSpam) { addWordCount(word, spamMap, hamMap); }
+			else { addWordCount(word, hamMap, spamMap); }
+		}
+		if(isSpam){ ++spamMailCount; }
+		else { ++hamMailCount; }
 	}
 
-	private void equalsMap() {
-		hamMap.keySet().stream().filter(s -> !spamMap.containsKey(s)).forEach(s -> {
-            spamMap.put(s, 1);
-        });
-        spamMap.keySet().stream().filter(s -> !hamMap.containsKey(s)).forEach(s -> {
-        	hamMap.put(s, 1);
-        });
-    }
+	private void addWordCount(String word, Map<String, Integer> toMap, Map<String, Integer> existsInMap){
+		if(!toMap.containsKey(word)){ toMap.put(word, 1); }
+		else { toMap.put(word, 1 + toMap.get(word)); }
+		if(!existsInMap.containsKey(word)){ existsInMap.put(word, 0); }
+	}
 	
 	public boolean isSpam(InputStream stream) {
 		return probabilitySpam(stream) > spamProbability;

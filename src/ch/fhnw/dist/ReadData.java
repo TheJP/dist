@@ -15,13 +15,7 @@ public class ReadData {
 	public void zipToSpamfilter(String fileName, boolean isSpam) 
 			throws IOException, MessagingException {
 		try(ZipFile zf = new ZipFile(fileName)){
-			zf.stream().forEach(z -> {
-				try {
-					spamFilter.addMail(zf.getInputStream(z), isSpam);	
-				} catch (IOException e) {
-					throw new RuntimeException(e);
-				}
-			});
+			zf.stream().forEach(z -> spamFilter.addMail(zf, z, isSpam));
 //			Enumeration<?> enumeration = zf.entries();
 //			while(enumeration.hasMoreElements()) {
 //				ZipEntry ze = (ZipEntry) enumeration.nextElement();
