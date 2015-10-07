@@ -14,7 +14,7 @@ public class Main {
 		
 		ReadData rd = new ReadData(filter);
 		try {
-//			rd.zipToSpamfilter("resources/spam-anlern.zip", true);
+			rd.zipToSpamfilter("resources/spam-anlern.zip", true);
 			rd.zipToSpamfilter("resources/ham-anlern.zip", false);
 
 			rd.zipLern("resources/spam-kallibrierung.zip", true);

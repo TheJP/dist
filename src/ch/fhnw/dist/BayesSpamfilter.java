@@ -54,12 +54,8 @@ public class BayesSpamfilter {
 		for(int i = 0; i < SCANCOUNT; i++) {
 			QueueObj scanObj = queue.poll();
 			if(scanObj != null) {
-				try {
-					prodPH *= hamMailCount / hamMap.get(scanObj.val);
-					pordPS *= spamMailCount / spamMap.get(scanObj.val);
-				} catch (NullPointerException e) {
-					e.printStackTrace(); //wtf?
-				}
+				prodPH *= hamMailCount / hamMap.get(scanObj.val);
+				pordPS *= spamMailCount / spamMap.get(scanObj.val);
 			}
 		}
 		double probability = pordPS/(pordPS + prodPH);
