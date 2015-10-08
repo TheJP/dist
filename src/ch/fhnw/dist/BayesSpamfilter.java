@@ -93,7 +93,7 @@ public class BayesSpamfilter {
 	private void addWordCount(String word, Map<String, Integer> toMap, Map<String, Integer> existsInMap){
 		if(!toMap.containsKey(word)){ toMap.put(word, 1); }
 		else { toMap.put(word, 1 + toMap.get(word)); }
-		if(!existsInMap.containsKey(word)){ existsInMap.put(word, 0); }
+		if(!existsInMap.containsKey(word)){ existsInMap.put(word, 1); }
 	}
 	
 	public boolean isSpam(InputStream stream) {
