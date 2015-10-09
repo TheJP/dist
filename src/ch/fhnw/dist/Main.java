@@ -9,11 +9,10 @@ import javax.mail.MessagingException;
 public class Main {
 
 	public static void main(String[] args) {
-		final Scanner scan = new Scanner(System.in);
 		final BayesSpamfilter filter = new BayesSpamfilter();
-		
 		ReadData rd = new ReadData(filter);
-		try {
+
+		try(final Scanner scan = new Scanner(System.in)) {
 			rd.zipToSpamfilter("resources/spam-anlern.zip", true);
 			rd.zipToSpamfilter("resources/ham-anlern.zip", false);
 
@@ -25,21 +24,19 @@ public class Main {
 			rd.zipTest("resources/spam-test.zip");
 
 			while (true) {
-				System.out.println("Insert path to mail\n");
+				System.out.println("Insert path to mail");
 				String file = scan.nextLine();
-				System.out.println("Probability: " 
-						+ filter.probabilitySpam(new FileInputStream(file)));
-				System.out.println("Is Spam? y = yes, n = no");
-				String yesOrNo = scan.nextLine();
-				if(yesOrNo.contains("y")) {//Wrong for e.g. the following input: Hell no you dont!
-					filter.addMail(new FileInputStream(file), true);
-				} else if(yesOrNo.contains("n")) {
-					filter.addMail(new FileInputStream(file), false);
-				}
+				System.out.println("Probability: " + filter.probabilitySpam(new FileInputStream(file)));
+				String yesOrNo = null;
+				do{
+					if(yesOrNo != null){ System.err.println("Invalid input"); }
+					System.out.println("Is Spam? y = yes, n = no");
+					yesOrNo = scan.nextLine().trim();
+				} while(!yesOrNo.equalsIgnoreCase("n") && !yesOrNo.equalsIgnoreCase("y"));
+				filter.addMail(new FileInputStream(file), yesOrNo.equalsIgnoreCase("y"));
 			}
 		} catch (IOException | MessagingException e) {
 			e.printStackTrace();
-			scan.close();
 		}
 	}
 }
