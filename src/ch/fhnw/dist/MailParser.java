@@ -15,6 +15,8 @@ import javax.mail.Session;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 
+import com.sun.mail.util.DecodingException;
+
 /**
  * Used to extract the content of mails.
  * @author JP
@@ -36,6 +38,10 @@ public class MailParser {
 			content = getContent(message.getContent());
 		} catch (UnsupportedEncodingException e) {
 			content = getContent(message.getInputStream());
+		} catch (DecodingException | MessagingException e) {
+			//TODO:
+			System.err.println("Invalid mail");
+			content = "";
 		}
 		Stream<String> result = Arrays.stream(content.split("\n"));
 		if (content.trim().startsWith("URL")) { result = result.skip(3); }
@@ -62,7 +68,8 @@ public class MailParser {
 			StringBuilder sb = new StringBuilder();
 			for (int i = 0; i < multipart.getCount(); ++i) {
 				BodyPart bodyPart = multipart.getBodyPart(i);
-				if (bodyPart.getContentType().contains("text/")) {
+				if (bodyPart.getContentType().contains("text/") ||
+						bodyPart.getContentType().contains("multipart/")) {
 					sb.append(getContent(bodyPart.getContent()));
 				}
 			}

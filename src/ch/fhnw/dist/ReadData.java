@@ -28,11 +28,11 @@ public class ReadData {
 			throws IOException, MessagingException {
 		try(ZipFile zf = new ZipFile(fileName)){
 			zf.stream().forEach(z -> {
-				try {
-					spamFilter.calcProbability(zf.getInputStream(z), isSpam);	
-				} catch (IOException e) {
-					throw new RuntimeException(e);
-				}
+//				try {
+//					spamFilter.calcProbability(zf.getInputStream(z), isSpam);
+//				} catch (IOException e) {
+//					throw new RuntimeException(e);
+//				}
 			});
 		}
 	}
@@ -41,11 +41,11 @@ public class ReadData {
 			throws IOException, MessagingException {
 		try(ZipFile zf = new ZipFile(fileName)){
 			zf.stream().forEach(z -> {
-				try {
-					System.out.println(spamFilter.isSpam(zf.getInputStream(z)));	
-				} catch (IOException e) {
-					throw new RuntimeException(e);
-				}
+//				try {
+//					System.out.println(spamFilter.isSpam(zf.getInputStream(z)));
+//				} catch (IOException e) {
+//					throw new RuntimeException(e);
+//				}
 			});
 		}
 	}

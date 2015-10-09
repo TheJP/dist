@@ -14,7 +14,7 @@ public class Main {
 		
 		ReadData rd = new ReadData(filter);
 		try {
-//			rd.zipToSpamfilter("resources/spam-anlern.zip", true);
+			rd.zipToSpamfilter("resources/spam-anlern.zip", true);
 			rd.zipToSpamfilter("resources/ham-anlern.zip", false);
 
 			rd.zipLern("resources/spam-kallibrierung.zip", true);
@@ -23,10 +23,7 @@ public class Main {
 			//3. Testen mit ham und spam test
 			rd.zipTest("resources/ham-test.zip");
 			rd.zipTest("resources/spam-test.zip");
-			
-//			for (String s : spamMap.keySet()) {
-//                System.out.println(s + ": " + spamMap.get(s));
-//          }
+
 			while (true) {
 				System.out.println("Insert path to mail\n");
 				String file = scan.nextLine();
@@ -34,7 +31,7 @@ public class Main {
 						+ filter.probabilitySpam(new FileInputStream(file)));
 				System.out.println("Is Spam? y = yes, n = no");
 				String yesOrNo = scan.nextLine();
-				if(yesOrNo.contains("y")) {
+				if(yesOrNo.contains("y")) {//Wrong for e.g. the following input: Hell no you dont!
 					filter.addMail(new FileInputStream(file), true);
 				} else if(yesOrNo.contains("n")) {
 					filter.addMail(new FileInputStream(file), false);
