@@ -15,6 +15,8 @@ import javax.mail.Session;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 
+import org.jsoup.Jsoup;
+
 import com.sun.mail.util.DecodingException;
 
 /**
@@ -45,6 +47,7 @@ public class MailParser {
 		}
 		Stream<String> result = Arrays.stream(content.split("\n"));
 		if (content.trim().startsWith("URL")) { result = result.skip(3); }
+		content = Jsoup.parse(content).text();
 		return result.reduce("", (a, b) -> a + b + "\n");
 	}
 
