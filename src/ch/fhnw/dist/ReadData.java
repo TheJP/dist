@@ -1,53 +1,34 @@
 package ch.fhnw.dist;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.ToDoubleFunction;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import javax.mail.MessagingException;
 
 public class ReadData {
-	final BayesSpamfilter spamFilter;
-	
-	public ReadData(BayesSpamfilter spamFilter) {
-		this.spamFilter = spamFilter;
-	}
-	
-	public void zipToSpamfilter(String fileName, boolean isSpam) 
-			throws IOException, MessagingException {
+
+	public void readZip(String fileName, Function<ZipFile, Consumer<ZipEntry>> action) throws IOException, MessagingException {
 		try(ZipFile zf = new ZipFile(fileName)){
-			zf.stream().forEach(z -> spamFilter.addMail(zf, z, isSpam));
-//			Enumeration<?> enumeration = zf.entries();
-//			while(enumeration.hasMoreElements()) {
-//				ZipEntry ze = (ZipEntry) enumeration.nextElement();
-//				findWords(hm, zf.getInputStream(ze));
-//			}
+			zf.stream().forEach(action.apply(zf));
 		}
 	}
-	
-	public void zipLern(String fileName, boolean isSpam) 
-			throws IOException, MessagingException {
+
+	public <T> List<T> readZipStream(String fileName, Function<ZipFile, Function<ZipEntry, T>> action) throws IOException, MessagingException {
 		try(ZipFile zf = new ZipFile(fileName)){
-			zf.stream().forEach(z -> {
-//				try {
-//					spamFilter.calcProbability(zf.getInputStream(z), isSpam);
-//				} catch (IOException e) {
-//					throw new RuntimeException(e);
-//				}
-			});
+			return zf.stream().map(action.apply(zf)).collect(Collectors.toList());
 		}
 	}
-	
-	public void zipTest(String fileName) 
-			throws IOException, MessagingException {
+
+	public double[] readZipDouble(String fileName, Function<ZipFile, ToDoubleFunction<ZipEntry>> action) throws IOException, MessagingException {
 		try(ZipFile zf = new ZipFile(fileName)){
-			zf.stream().forEach(z -> {
-//				try {
-//					System.out.println(spamFilter.isSpam(zf.getInputStream(z)));
-//				} catch (IOException e) {
-//					throw new RuntimeException(e);
-//				}
-			});
+			return zf.stream().mapToDouble(action.apply(zf)).toArray();
 		}
 	}
-	
+
 }

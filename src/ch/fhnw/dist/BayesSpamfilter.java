@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.ToDoubleFunction;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -21,27 +22,35 @@ public class BayesSpamfilter {
 	private int hamMailCount = 0;
 	private final HashMap<String, Integer> spamMap = new HashMap<>();
 	private int spamMailCount = 0;
-	
-	public double probabilitySpam(InputStream mailStream) {
-		String content = null;
+
+
+	public double probabilitySpam(ZipFile zf, ZipEntry z) {
 		try {
-			content = parser.getMessage(mailStream);
+			return probabilitySpam(zf.getInputStream(z));
 		} catch (IOException | MessagingException e) {
 			throw new RuntimeException(e);
 		}
+	}
 
+	public double probabilitySpam(InputStream stream) throws MessagingException, IOException {
+		String content = parser.getMessage(stream);
 		Set<String> words = getWords(content);
-		//spamProduct = P(A1 | S) * ... * P(An | S)
-		double spamProduct = words.stream().mapToDouble(word -> {
-			if(!spamMap.containsKey(word)){ return ALPHA; }
-			return Math.max(spamMap.get(word), ALPHA) / spamMailCount;
-		}).reduce((a, b) -> a*b).getAsDouble();
-		//hamProduct = P(A1 | H) * ... * P(An | H)
-		double hamProduct = words.stream().mapToDouble(word -> {
-			if(!hamMap.containsKey(word)){ return ALPHA; }
-			return Math.max(hamMap.get(word), ALPHA) / hamMailCount;
-		}).reduce((a, b) -> a*b).getAsDouble();
-		return spamProduct / (spamProduct + hamProduct);
+		final ToDoubleFunction<DoublePair> importance = p -> Math.abs(0.5 - p.left / (p.left + p.right));
+		DoublePair result = words.stream()
+			.map(word -> {
+				double spam = spamMap.containsKey(word) ?
+					Math.max(spamMap.get(word), ALPHA) / spamMailCount : ALPHA;
+				double ham = hamMap.containsKey(word) ?
+					Math.max(hamMap.get(word), ALPHA) / hamMailCount : ALPHA;
+				return new DoublePair(spam, ham);
+			})
+			.sorted((a, b) -> Double.compare(importance.applyAsDouble(b), importance.applyAsDouble(a)))
+			.limit(10)
+			.reduce((a, b) -> new DoublePair(a.getLeft() * b.getLeft(), a.getRight() * b.getRight()))
+			.get();
+		//left = P(A1 | S) * ... * P(An | S)
+		//right = P(A1 | H) * ... * P(An | H)
+		return result.getLeft() / (result.getLeft() + result.getRight());
 	}
 	
 	public void addMail(ZipFile zf, ZipEntry z, boolean isSpam) {
@@ -94,5 +103,18 @@ public class BayesSpamfilter {
 		return Arrays.stream(content.toLowerCase(Locale.ENGLISH).split("\\W+"))
 			.filter(w -> !w.trim().equals(""))
 			.collect(Collectors.toSet());
+	}
+
+	/**
+	 * Immutable double pair, which is used in some stream calculations.
+	 */
+	private static class DoublePair {
+		private double left, right;
+		public DoublePair(double left, double right){
+			this.left = left;
+			this.right = right;
+		}
+		public double getLeft(){ return left; }
+		public double getRight(){ return right; }
 	}
 }
