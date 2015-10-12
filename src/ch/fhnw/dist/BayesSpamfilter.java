@@ -16,8 +16,8 @@ import javax.mail.MessagingException;
 
 public class BayesSpamfilter {
 	private MailParser parser = new MailParser();
-//	private static final int SCANCOUNT = 10;
-	private static final double ALPHA = 0.001;
+	private static final int SCANCOUNT = 10;
+	private static final double ALPHA = 0.04;
 	private final HashMap<String, Integer> hamMap = new HashMap<>();
 	private int hamMailCount = 0;
 	private final HashMap<String, Integer> spamMap = new HashMap<>();
@@ -45,7 +45,7 @@ public class BayesSpamfilter {
 				return new DoublePair(spam, ham);
 			})
 			.sorted((a, b) -> Double.compare(importance.applyAsDouble(b), importance.applyAsDouble(a)))
-			.limit(10)
+			.limit(SCANCOUNT)
 			.reduce((a, b) -> new DoublePair(a.getLeft() * b.getLeft(), a.getRight() * b.getRight()))
 			.get();
 		//left = P(A1 | S) * ... * P(An | S)
