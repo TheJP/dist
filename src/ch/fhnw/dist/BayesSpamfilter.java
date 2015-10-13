@@ -23,7 +23,12 @@ public class BayesSpamfilter {
 	private final HashMap<String, Integer> spamMap = new HashMap<>();
 	private int spamMailCount = 0;
 
-
+	/**
+	 * Calculates probability as double for every ZipEntry in the ZipFile.
+	 * @param zf The ZipFile with contains the ZipEntry.
+	 * @param z The ZipEntry to scan.
+	 * @return calculated probability.
+	 */
 	public double probabilitySpam(ZipFile zf, ZipEntry z) {
 		try {
 			return probabilitySpam(zf.getInputStream(z));
@@ -32,6 +37,13 @@ public class BayesSpamfilter {
 		}
 	}
 
+	/**
+	 * Calculates probability as double for a InputStream.
+	 * @param stream The inputStream.
+	 * @return calculated probability.
+	 * @throws MessagingException Will be thrown if Input could not be parsed.
+	 * @throws IOException Will be thrown if file had error.
+	 */
 	public double probabilitySpam(InputStream stream) throws MessagingException, IOException {
 		String content = parser.getMessage(stream);
 		Set<String> words = getWords(content);
@@ -53,6 +65,14 @@ public class BayesSpamfilter {
 		return result.getLeft() / (result.getLeft() + result.getRight());
 	}
 	
+	/**
+	 * Adds the mail in the learning phase.
+	 * Increases the word count for every word that exists in the given mail.
+	 * It also assures that all words exist in both maps.
+	 * @param zf ZipFile with contains the ZipEntry.
+	 * @param z The ZipEntry containing the mail.
+	 * @param isSpam marks mail as spam.
+	 */
 	public void addMail(ZipFile zf, ZipEntry z, boolean isSpam) {
 		try {
 			addMail(zf.getInputStream(z), isSpam);
