@@ -59,7 +59,7 @@ public class Main {
 			final AtomicInteger i = new AtomicInteger(0);
 			rd.readZip("resources/spam-kallibrierung.zip", zf -> z -> {if(spamCalibProbabilities[i.getAndIncrement()] < 0.55) filter.addMail(zf, z, true);});
 			i.set(0);
-			rd.readZip("resources/ham-kallibrierung.zip", zf -> z -> {if(hamCalibProbabilities[i.getAndIncrement()] < 0.55) filter.addMail(zf, z, false);});
+			rd.readZip("resources/ham-kallibrierung.zip", zf -> z -> {if(hamCalibProbabilities[i.getAndIncrement()] >= 0.45) filter.addMail(zf, z, false);});
 			
 			//Set Barrier to lower to ham detection
 			final double STEP = 0.06;
