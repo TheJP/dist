@@ -41,7 +41,6 @@ public class MailParser {
 		} catch (UnsupportedEncodingException e) {
 			content = getContent(message.getInputStream());
 		} catch (DecodingException | MessagingException e) {
-			//TODO:
 			System.err.println("Invalid mail");
 			content = "";
 		}
