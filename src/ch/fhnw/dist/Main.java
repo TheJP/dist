@@ -83,6 +83,7 @@ public class Main {
 			double[] hamProbabilities = probabilityOfZip("resources/ham-test.zip");
 			checkFindings(spamProbabilities, hamProbabilities, barrier, true);
 
+			//Request form console for new mails.
 			while (true) {
 				System.out.println("Insert path to mail or Quit with ':q'");
 				String file = scan.nextLine();
