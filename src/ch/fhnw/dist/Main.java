@@ -88,7 +88,7 @@ public class Main {
                     System.exit(0);
                 }
 				try(FileInputStream stream = new FileInputStream(file)){
-					System.out.println("Probability: " + filter.probabilitySpam(stream));
+					System.out.println("Probability: " + String.format("%.2f:", filter.probabilitySpam(stream)*100) + "%");
 				} catch (FileNotFoundException e) {
                     System.err.println(e.getMessage());
                     continue;
