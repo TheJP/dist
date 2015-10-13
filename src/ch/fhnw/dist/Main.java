@@ -74,7 +74,7 @@ public class Main {
 				perc = percMinus;
 				percMinus = checkFindings(spamCalibProbabilities, hamCalibProbabilities, barrier + STEP, false);
 			}
-			System.out.println("Barrier: " + barrier);
+			System.out.println(String.format("Barrier: %.2f%%",barrier*100));
 
 			System.out.println("Testing phase");
 			double[] spamProbabilities = probabilityOfZip("resources/spam-test.zip");
@@ -88,7 +88,7 @@ public class Main {
                     System.exit(0);
                 }
 				try(FileInputStream stream = new FileInputStream(file)){
-					System.out.println("Probability: " + String.format("%.2f:", filter.probabilitySpam(stream)*100) + "%");
+					System.out.println(String.format("Probability: %.2f%%", filter.probabilitySpam(stream)*100));
 				} catch (FileNotFoundException e) {
                     System.err.println(e.getMessage());
                     continue;
