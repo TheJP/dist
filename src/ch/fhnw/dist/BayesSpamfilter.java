@@ -17,7 +17,7 @@ import javax.mail.MessagingException;
 public class BayesSpamfilter {
 	private MailParser parser = new MailParser();
 	private static final int SCANCOUNT = 10;
-	private static final double ALPHA = 0.04;
+	private static final double ALPHA = 0.000004;
 	private final HashMap<String, Integer> hamMap = new HashMap<>();
 	private int hamMailCount = 0;
 	private final HashMap<String, Integer> spamMap = new HashMap<>();

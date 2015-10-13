@@ -4,6 +4,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Scanner;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.mail.MessagingException;
 
@@ -22,16 +23,19 @@ public class Main {
 	 * @param hamProbabilities
 	 * @param barrier
 	 */
-	private double checkFindings(double[] spamProbabilities,  double[] hamProbabilities, double barrier){
+	private double checkFindings(double[] spamProbabilities,  double[] hamProbabilities, double barrier, boolean output){
 		long spamDetected = Arrays.stream(spamProbabilities).filter(spam -> spam >= barrier).count();
 		double percSpam = spamDetected * 100.0 / spamProbabilities.length;
-		System.out.println(String.format("Spam count: %s Detected: %d (%.2f%%)",
-			spamProbabilities.length, spamDetected, percSpam));
 		long hamDetected = Arrays.stream(hamProbabilities).filter(ham -> ham < barrier).count();
 		double percHam = hamDetected * 100.0 / hamProbabilities.length;
-		System.out.println(String.format("Ham count: %s Detected: %d (%.2f%%)",
-			hamProbabilities.length, hamDetected, percHam));
-		return (percSpam + percHam) / 2;
+		if(output) {
+			System.out.println(String.format("Spam count: %s Detected: %d (%.2f%%)",
+					spamProbabilities.length, spamDetected, percSpam));
+			System.out.println(String.format("Ham count: %s Detected: %d (%.2f%%)",
+					hamProbabilities.length, hamDetected, percHam));
+		}
+//		return (percSpam + percHam) / 2;
+		return percHam;
 	}
 
 	public void run(){
@@ -47,32 +51,34 @@ public class Main {
 			double barrier = 0.50;
 
 			System.out.println("Kalibration phase");
-			double[] spamProbabilities = probabilityOfZip("resources/spam-kallibrierung.zip");
-			double[] hamProbabilities = probabilityOfZip("resources/ham-kallibrierung.zip");
+			final double[] spamCalibProbabilities = probabilityOfZip("resources/spam-kallibrierung.zip");
+			final double[] hamCalibProbabilities = probabilityOfZip("resources/ham-kallibrierung.zip");
 			
-			//TODO Ev noch hamProzente spamProzente einzeln beachten für automatische kalibrierung. im mom nur durchschnitt
-			final double STEP = 0.04;
-			double percPlus = checkFindings(spamProbabilities, hamProbabilities, barrier + STEP);
-			double perc = checkFindings(spamProbabilities, hamProbabilities, barrier);
-			double percMinus = checkFindings(spamProbabilities, hamProbabilities, barrier - STEP);
-			System.out.println(percPlus + " " + perc);
-			while (perc < percPlus) {
+			final AtomicInteger i = new AtomicInteger(0);
+			rd.readZip("resources/spam-kallibrierung.zip", zf -> z -> {if(spamCalibProbabilities[i.getAndIncrement()] < 0.55) filter.addMail(zf, z, true);});
+			i.set(0);
+			rd.readZip("resources/ham-kallibrierung.zip", zf -> z -> {if(hamCalibProbabilities[i.getAndIncrement()] < 0.55) filter.addMail(zf, z, false);});
+			
+			final double STEP = 0.06;
+			double percPlus = checkFindings(spamCalibProbabilities, hamCalibProbabilities, barrier + STEP, false);
+			double perc = checkFindings(spamCalibProbabilities, hamCalibProbabilities, barrier, false);
+			double percMinus = checkFindings(spamCalibProbabilities, hamCalibProbabilities, barrier - STEP, false);
+			while (perc < percPlus && barrier < 0.9) {
 				barrier += STEP;
 				perc = percPlus;
-				percPlus = checkFindings(spamProbabilities, hamProbabilities, barrier + STEP);
+				percPlus = checkFindings(spamCalibProbabilities, hamCalibProbabilities, barrier + STEP, false);
 			}
-			while (perc < percMinus) {
+			while (perc < percMinus && barrier < 0.9) {
 				barrier += STEP;
 				perc = percMinus;
-				percMinus = checkFindings(spamProbabilities, hamProbabilities, barrier + STEP);
+				percMinus = checkFindings(spamCalibProbabilities, hamCalibProbabilities, barrier + STEP, false);
 			}
-			
-			System.out.println(barrier);
+			System.out.println("Barrier: " + barrier);
 
 			System.out.println("Testing phase");
-			spamProbabilities = probabilityOfZip("resources/spam-test.zip");
-			hamProbabilities = probabilityOfZip("resources/ham-test.zip");
-			checkFindings(spamProbabilities, hamProbabilities, barrier);
+			double[] spamProbabilities = probabilityOfZip("resources/spam-test.zip");
+			double[] hamProbabilities = probabilityOfZip("resources/ham-test.zip");
+			checkFindings(spamProbabilities, hamProbabilities, barrier, true);
 
 			while (true) {
 				System.out.println("Insert path to mail");
