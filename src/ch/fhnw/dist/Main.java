@@ -13,6 +13,9 @@ public class Main {
 
 	private final BayesSpamfilter filter = new BayesSpamfilter();
 	private final ReadData rd = new ReadData();
+	private double barrier = 0.5;
+	private final static double BARRIER_DIFF = 0.05;
+	private final static double STEP = 0.06;
 
 	private double[] probabilityOfZip(String filename) throws IOException, MessagingException{
 		return rd.readZipDouble(filename, zf -> z -> filter.probabilitySpam(zf, z));
@@ -39,8 +42,60 @@ public class Main {
 		return percHam;
 	}
 
-	public void run(){
+	/**
+	 * Reads additional mails from paths entered on the console to the spam filter.
+	 * @param scan Standard input
+	 * @throws IOException
+	 * @throws MessagingException
+	 */
+	private void readAdditionalMails(final Scanner scan) throws IOException, MessagingException{
+		while (true) {
+			System.out.println("Insert path to mail or Quit with ':q'");
+			String file = scan.nextLine();
+			if (":q".equalsIgnoreCase(file)) {
+                System.exit(0);
+            }
+			try(FileInputStream stream = new FileInputStream(file)){
+				System.out.println(String.format("Probability: %.2f%%", filter.probabilitySpam(stream)*100));
+			} catch (FileNotFoundException e) {
+                System.err.println(e.getMessage());
+                continue;
+            }
+			String yesOrNo = null;
+			do{
+				if(yesOrNo != null){ System.err.println("Invalid input"); }
+				System.out.println("Is Spam? y = yes, n = no");
+				yesOrNo = scan.nextLine().trim();
+			} while(!yesOrNo.equalsIgnoreCase("n") && !yesOrNo.equalsIgnoreCase("y"));
+			try(FileInputStream stream = new FileInputStream(file)){
+				filter.addMail(stream, yesOrNo.equalsIgnoreCase("y"));
+			}
+		}
+	}
 
+	/**
+	 * Set Barrier to lower to improve the ham detection.
+	 * @param spamCalibProbabilities Probabilities that were derived from the spam calibration mails.
+	 * @param hamCalibProbabilities Probabilities that were derived from the ham calibration mails.
+	 */
+	private void calibrateBarrier(double[] spamCalibProbabilities, double[] hamCalibProbabilities){
+		double percPlus = checkFindings(spamCalibProbabilities, hamCalibProbabilities, barrier + STEP, false);
+		double perc = checkFindings(spamCalibProbabilities, hamCalibProbabilities, barrier, false);
+		double percMinus = checkFindings(spamCalibProbabilities, hamCalibProbabilities, barrier - STEP, false);
+		while (perc < percPlus && barrier < 0.9) {
+			barrier += STEP;
+			perc = percPlus;
+			percPlus = checkFindings(spamCalibProbabilities, hamCalibProbabilities, barrier + STEP, false);
+		}
+		while (perc < percMinus && barrier < 0.9) {
+			barrier += STEP;
+			perc = percMinus;
+			percMinus = checkFindings(spamCalibProbabilities, hamCalibProbabilities, barrier + STEP, false);
+		}
+		System.out.println(String.format("Barrier: %.2f%%",barrier*100));
+	}
+	
+	public void run(){
 		try(final Scanner scan = new Scanner(System.in)) {
 			System.out.println("Learning phase");
 			rd.readZip("resources/spam-anlern.zip", zf -> z -> filter.addMail(zf, z, true));
@@ -48,8 +103,6 @@ public class Main {
 
 //			double barrier = 1.0 - (1.0 / Math.pow(10, 10)); //72.25% / 97.31%
 //			double barrier = 0.99; //93.78% / 91.26%
-			
-			double barrier = 0.50;
 
 			System.out.println("Kalibration phase");
 			final double[] spamCalibProbabilities = probabilityOfZip("resources/spam-kallibrierung.zip");
@@ -57,26 +110,12 @@ public class Main {
 			
 			//Add mails to spam/ham if the probabilities are to low
 			final AtomicInteger i = new AtomicInteger(0);
-			rd.readZip("resources/spam-kallibrierung.zip", zf -> z -> {if(spamCalibProbabilities[i.getAndIncrement()] < 0.55) filter.addMail(zf, z, true);});
+			rd.readZip("resources/spam-kallibrierung.zip", zf -> z -> {if(spamCalibProbabilities[i.getAndIncrement()] < barrier + BARRIER_DIFF) filter.addMail(zf, z, true);});
 			i.set(0);
-			rd.readZip("resources/ham-kallibrierung.zip", zf -> z -> {if(hamCalibProbabilities[i.getAndIncrement()] >= 0.45) filter.addMail(zf, z, false);});
-			
-			//Set Barrier to lower to ham detection
-			final double STEP = 0.06;
-			double percPlus = checkFindings(spamCalibProbabilities, hamCalibProbabilities, barrier + STEP, false);
-			double perc = checkFindings(spamCalibProbabilities, hamCalibProbabilities, barrier, false);
-			double percMinus = checkFindings(spamCalibProbabilities, hamCalibProbabilities, barrier - STEP, false);
-			while (perc < percPlus && barrier < 0.9) {
-				barrier += STEP;
-				perc = percPlus;
-				percPlus = checkFindings(spamCalibProbabilities, hamCalibProbabilities, barrier + STEP, false);
-			}
-			while (perc < percMinus && barrier < 0.9) {
-				barrier += STEP;
-				perc = percMinus;
-				percMinus = checkFindings(spamCalibProbabilities, hamCalibProbabilities, barrier + STEP, false);
-			}
-			System.out.println(String.format("Barrier: %.2f%%",barrier*100));
+			rd.readZip("resources/ham-kallibrierung.zip", zf -> z -> {if(hamCalibProbabilities[i.getAndIncrement()] >= barrier - BARRIER_DIFF) filter.addMail(zf, z, false);});
+
+			//Calibrate barrier
+			calibrateBarrier(spamCalibProbabilities, hamCalibProbabilities);
 
 			System.out.println("Testing phase");
 			double[] spamProbabilities = probabilityOfZip("resources/spam-test.zip");
@@ -84,28 +123,8 @@ public class Main {
 			checkFindings(spamProbabilities, hamProbabilities, barrier, true);
 
 			//Request form console for new mails.
-			while (true) {
-				System.out.println("Insert path to mail or Quit with ':q'");
-				String file = scan.nextLine();
-				if (":q".equalsIgnoreCase(file)) {
-                    System.exit(0);
-                }
-				try(FileInputStream stream = new FileInputStream(file)){
-					System.out.println(String.format("Probability: %.2f%%", filter.probabilitySpam(stream)*100));
-				} catch (FileNotFoundException e) {
-                    System.err.println(e.getMessage());
-                    continue;
-                }
-				String yesOrNo = null;
-				do{
-					if(yesOrNo != null){ System.err.println("Invalid input"); }
-					System.out.println("Is Spam? y = yes, n = no");
-					yesOrNo = scan.nextLine().trim();
-				} while(!yesOrNo.equalsIgnoreCase("n") && !yesOrNo.equalsIgnoreCase("y"));
-				try(FileInputStream stream = new FileInputStream(file)){
-					filter.addMail(stream, yesOrNo.equalsIgnoreCase("y"));
-				}
-			}
+			readAdditionalMails(scan);
+
 		} catch (IOException | MessagingException e) {
 			e.printStackTrace();
 		}
@@ -114,6 +133,4 @@ public class Main {
 	public static void main(String[] args) {
 		new Main().run();
 	}
-	
-	
 }
