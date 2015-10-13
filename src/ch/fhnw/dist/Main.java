@@ -4,8 +4,9 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Scanner;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import javax.mail.MessagingException;
 
@@ -19,6 +20,17 @@ public class Main {
 
 	private double[] probabilityOfZip(String filename) throws IOException, MessagingException{
 		return rd.readZipDouble(filename, zf -> z -> filter.probabilitySpam(zf, z));
+	}
+
+	private Map<String, Double> probabilityMapOfZip(String filename) throws IOException, MessagingException{
+		return rd.readZipStream(filename, zf -> z ->
+				new SDPair(z.getName(), filter.probabilitySpam(zf, z)))
+			.stream()
+			.collect(Collectors.toMap(p -> p.getKey(), p -> p.getValue()));
+	}
+
+	private double[] mapToArray(Map<String, Double> map){
+		return map.values().stream().mapToDouble(v -> v.doubleValue()).toArray();
 	}
 
 	/**
@@ -105,17 +117,17 @@ public class Main {
 //			double barrier = 0.99; //93.78% / 91.26%
 
 			System.out.println("Kalibration phase");
-			final double[] spamCalibProbabilities = probabilityOfZip("resources/spam-kallibrierung.zip");
-			final double[] hamCalibProbabilities = probabilityOfZip("resources/ham-kallibrierung.zip");
-			
-			//Add mails to spam/ham if the probabilities are to low
-			final AtomicInteger i = new AtomicInteger(0);
-			rd.readZip("resources/spam-kallibrierung.zip", zf -> z -> {if(spamCalibProbabilities[i.getAndIncrement()] < barrier + BARRIER_DIFF) filter.addMail(zf, z, true);});
-			i.set(0);
-			rd.readZip("resources/ham-kallibrierung.zip", zf -> z -> {if(hamCalibProbabilities[i.getAndIncrement()] >= barrier - BARRIER_DIFF) filter.addMail(zf, z, false);});
+			final Map<String, Double> spamCalibProbabilities = probabilityMapOfZip("resources/spam-kallibrierung.zip");
+			final Map<String, Double> hamCalibProbabilities = probabilityMapOfZip("resources/ham-kallibrierung.zip");
+
+			//Add mails to spam/ham if they are detected wrong or almost wrong (with a barrier of 0.5)
+			rd.readZip("resources/spam-kallibrierung.zip", zf -> z -> {
+				if(spamCalibProbabilities.get(z.getName()) <= barrier + BARRIER_DIFF){ filter.addMail(zf, z, true); }});
+			rd.readZip("resources/ham-kallibrierung.zip", zf -> z -> {
+				if(hamCalibProbabilities.get(z.getName()) >= barrier - BARRIER_DIFF){ filter.addMail(zf, z, false); }});
 
 			//Calibrate barrier
-			calibrateBarrier(spamCalibProbabilities, hamCalibProbabilities);
+			calibrateBarrier(mapToArray(spamCalibProbabilities), mapToArray(hamCalibProbabilities));
 
 			System.out.println("Testing phase");
 			double[] spamProbabilities = probabilityOfZip("resources/spam-test.zip");
