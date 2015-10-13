@@ -1,6 +1,7 @@
 package ch.fhnw.dist;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Scanner;
@@ -81,11 +82,17 @@ public class Main {
 			checkFindings(spamProbabilities, hamProbabilities, barrier, true);
 
 			while (true) {
-				System.out.println("Insert path to mail");
+				System.out.println("Insert path to mail or Quit with ':q'");
 				String file = scan.nextLine();
+				if (":q".equalsIgnoreCase(file)) {
+                    System.exit(0);
+                }
 				try(FileInputStream stream = new FileInputStream(file)){
 					System.out.println("Probability: " + filter.probabilitySpam(stream));
-				}
+				} catch (FileNotFoundException e) {
+                    System.err.println(e.getMessage());
+                    continue;
+                }
 				String yesOrNo = null;
 				do{
 					if(yesOrNo != null){ System.err.println("Invalid input"); }
