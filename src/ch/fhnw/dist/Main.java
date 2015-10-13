@@ -55,11 +55,13 @@ public class Main {
 			final double[] spamCalibProbabilities = probabilityOfZip("resources/spam-kallibrierung.zip");
 			final double[] hamCalibProbabilities = probabilityOfZip("resources/ham-kallibrierung.zip");
 			
+			//Add mails to spam/ham if the probabilities are to low
 			final AtomicInteger i = new AtomicInteger(0);
 			rd.readZip("resources/spam-kallibrierung.zip", zf -> z -> {if(spamCalibProbabilities[i.getAndIncrement()] < 0.55) filter.addMail(zf, z, true);});
 			i.set(0);
 			rd.readZip("resources/ham-kallibrierung.zip", zf -> z -> {if(hamCalibProbabilities[i.getAndIncrement()] < 0.55) filter.addMail(zf, z, false);});
 			
+			//Set Barrier to lower to ham detection
 			final double STEP = 0.06;
 			double percPlus = checkFindings(spamCalibProbabilities, hamCalibProbabilities, barrier + STEP, false);
 			double perc = checkFindings(spamCalibProbabilities, hamCalibProbabilities, barrier, false);
