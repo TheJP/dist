@@ -63,9 +63,10 @@ public class BayesSpamfilter {
 
 	/**
 	 * Adds the mail in the learning phase.
-	 * TODO: Add desc
-	 * @param stream
-	 * @param isSpam
+	 * Increases the word count for every word that exists in the given mail.
+	 * It also assures that all words exist in both maps.
+	 * @param stream Stream containing a mail in the mime format.
+	 * @param isSpam Flag whether the counts should be increased in the spam or the ham map.
 	 * @throws MessagingException
 	 * @throws IOException
 	 */
@@ -96,8 +97,7 @@ public class BayesSpamfilter {
 
 	/**
 	 * Returns a distinct Set of all words in the given text.
-	 * @param content
-	 * @return
+	 * @param content Plain text (content of the mail)
 	 */
 	private Set<String> getWords(String content){
 		return Arrays.stream(content.toLowerCase(Locale.ENGLISH).split("\\W+"))

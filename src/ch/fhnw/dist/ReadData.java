@@ -9,23 +9,24 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import javax.mail.MessagingException;
-
+/**
+ * Reads zip files by name and applies a given function to each element.
+ */
 public class ReadData {
 
-	public void readZip(String fileName, Function<ZipFile, Consumer<ZipEntry>> action) throws IOException, MessagingException {
+	public void readZip(String fileName, Function<ZipFile, Consumer<ZipEntry>> action) throws IOException {
 		try(ZipFile zf = new ZipFile(fileName)){
 			zf.stream().forEach(action.apply(zf));
 		}
 	}
 
-	public <T> List<T> readZipStream(String fileName, Function<ZipFile, Function<ZipEntry, T>> action) throws IOException, MessagingException {
+	public <T> List<T> readZipStream(String fileName, Function<ZipFile, Function<ZipEntry, T>> action) throws IOException {
 		try(ZipFile zf = new ZipFile(fileName)){
 			return zf.stream().map(action.apply(zf)).collect(Collectors.toList());
 		}
 	}
 
-	public double[] readZipDouble(String fileName, Function<ZipFile, ToDoubleFunction<ZipEntry>> action) throws IOException, MessagingException {
+	public double[] readZipDouble(String fileName, Function<ZipFile, ToDoubleFunction<ZipEntry>> action) throws IOException {
 		try(ZipFile zf = new ZipFile(fileName)){
 			return zf.stream().mapToDouble(action.apply(zf)).toArray();
 		}
